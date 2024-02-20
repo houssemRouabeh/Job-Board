@@ -25,7 +25,7 @@
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="assets/css/style.css" rel="stylesheet">
+  <link href="./assets/css/style.css" rel="stylesheet">
 
 </head>
 
@@ -283,14 +283,14 @@
 
   <!-- ======= Footer ======= -->
   <footer id="footer">
-    <div class="container py-4 ">
-      <div class="copyright">
+    <div class="container py-4">
+      <div class="copyright" style="margin-left:30vw">
         &copy; Copyright <strong><span>JobLand</span></strong>. All Rights Reserved
       </div>
     </div>
   </footer><!-- End Footer -->
 
-  <div id="preloader"></div>
+
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <!-- Vendor JS Files -->

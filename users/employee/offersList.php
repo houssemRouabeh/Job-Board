@@ -1,19 +1,16 @@
 <?php
 session_start();
 require('../../config/db_connection.php');
+$id = $_SESSION['user_id'];
 
-// Requête SQL pour récupérer toutes les offres
-$sql = "SELECT * FROM offer";
-$stmt = $connection->prepare($sql);
+$currentDate = date('Y-m-d');
 
-if ($stmt) {
-    $stmt->execute();
-    $result = $stmt->get_result();
+// Mettez à jour les offres expirées
+$sql = "UPDATE offer SET status = 'Expired' WHERE date_end <= ? AND status = 'Open'";
+$stmt2 = $connection->prepare($sql);
+$stmt2->bind_param('s', $currentDate);
+$stmt2->execute();
 
-
-
-    $stmt->close();
-}
 ?>
 
 <!-- Reste du code HTML... -->
@@ -29,7 +26,7 @@ if ($stmt) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Admin - Dashboard</title>
+    <title>Employer - Offers List</title>
 
     <!-- Custom fonts for this template-->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -48,6 +45,11 @@ if ($stmt) {
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
+<style>
+    .clickable-row:hover {
+        cursor: pointer;
+    }
+</style>
 
 <body id="page-top">
 
@@ -55,75 +57,14 @@ if ($stmt) {
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-
-            <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-text mx-3">JobLand.</div>
-            </a>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider my-0">
-
-            <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <a class="nav-link" href="index.php">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Manage
-            </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
-                    <i class="fas fa-fw fa-cog"></i>
-                    <span>Accounts</span>
-                </a>
-                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Users Edit:</h6>
-                        <a class="collapse-item" href="admins.php">Admin</a>
-                        <a class="collapse-item" href="employer.php">Employer</a>
-                        <a class="collapse-item" href="employee.php">Employee</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Nav Item - Utilities Collapse Menu -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
-                    <i class="fas fa-fw fa-wrench"></i>
-                    <span>Jobs</span>
-                </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Offers Edit:</h6>
-                        <a class="collapse-item" href="offers.php">Job Offers</a>
-                        <a class="collapse-item" href="skills.php">Skills</a>
-                    </div>
-                </div>
-            </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="#" data-toggle="modal" data-target="#logoutModal">
-                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                    Logout
-                </a>
-            </li>
-
-
-        </ul>
+        <?php include 'employerSidebar.php'; ?>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
-
+            <!-- Topbar -->
+            <?php include 'employerNav.php' ?>
+            <!-- End of Topbar -->
             <!-- Main Content -->
             <div id="content">
                 <!-- Begin Page Content -->
@@ -141,56 +82,68 @@ if ($stmt) {
                         <div class="card shadow mb-4">
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                    <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
-                                                <th>Company Name</th>
-                                                <th>Title</th>
-                                                <th>Description</th>
+                                                <th>Job Title</th>
+                                                <th>Job Description</th>
+                                                <th>Skills</th>
                                                 <th>Salary</th>
-                                                <th>Publication Date</th>
-                                                <th>Completion Date</th>
+                                                <th>Published at</th>
+                                                <th>Expire at</th>
                                                 <th>Status</th>
-                                                <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php
-                                            // Vérifiez si des résultats ont été retournés
-                                            if ($result->num_rows > 0) {
+                                            // Requête SQL pour récupérer les offres de l'utilisateur
+                                            $sql = "SELECT * FROM offer WHERE id_user = ?";
+                                            $stmt = $connection->prepare($sql);
+
+                                            if ($stmt) {
+                                                $stmt->bind_param('i', $id);
+                                                $stmt->execute();
+                                                $result = $stmt->get_result();
+
+                                                // Boucle pour parcourir les offres
                                                 while ($offer = $result->fetch_assoc()) {
-                                                    $companyId = $offer['id_user'];
-                                                    $sqlCompany = "SELECT * FROM employer WHERE id_user = ?";
-                                                    $stmtCompany = $connection->prepare($sqlCompany);
+                                                    $offerId = $offer['id_offer'];
 
-                                                    if ($stmtCompany) {
-                                                        $stmtCompany->bind_param('i', $companyId);
-                                                        $stmtCompany->execute();
-                                                        $resultCompany = $stmtCompany->get_result();
+                                                    // Requête SQL pour récupérer les compétences associées à l'offre
+                                                    $sqlSkills = "SELECT name FROM skills s, offer_skills os WHERE os.id_skill = s.id_skill AND id_offer = ?";
+                                                    $stmtSkills = $connection->prepare($sqlSkills);
 
-                                                        // Vérifiez si des résultats ont été retournés pour l'entreprise
-                                                        if ($resultCompany->num_rows > 0) {
-                                                            $company = $resultCompany->fetch_assoc();
+                                                    if ($stmtSkills) {
+                                                        $stmtSkills->bind_param('i', $offerId);
+                                                        $stmtSkills->execute();
+                                                        $resultSkills = $stmtSkills->get_result();
 
-                                                            echo ' <tr>';
-                                                            echo '<td>' . $company['company_name'] . '</td>';
-                                                            echo '<td>' . $offer['title'] . '</td>';
-                                                            echo '<td>' . $offer['description'] . '</td>';
-                                                            echo '<td>' . $offer['salary'] . '</td>';
-                                                            echo '<td>' . $offer['date_creation'] . '</td>';
-                                                            echo '<td>' . $offer['date_end'] . '</td>';
-                                                            echo '<td>' . $offer['status'] . '</td>';
-                                                            echo '<td>
-                                                                    <a href="deleteOffer.php?offerId=' . $offer['id_offer'] . '" class="btn btn-danger btn-circle"><i class="fas fa-trash"></i></a> Delete
-                                                                  </td>';
-                                                            echo '</tr>';
+                                                        // Boucle pour parcourir les compétences
+                                                        $skillsArray = [];
+                                                        while ($skill = $resultSkills->fetch_assoc()) {
+                                                            $skillsArray[] = $skill['name'];
                                                         }
 
-                                                        $stmtCompany->close();
+                                                        echo '<tr class="clickable-row" onclick="window.location=\'offerDetails.php?offerId=' . $offer['id_offer'] . '\'">';
+                                                        echo '<td>' . $offer['title'] . '</td>';
+                                                        echo '<td>' . $offer['description'] . '</td>';
+                                                        echo '<td>' . implode(', ', $skillsArray) . '</td>';
+                                                        echo '<td>' . $offer['salary'] . '</td>';
+                                                        echo '<td>' . $offer['date_creation'] . '</td>';
+                                                        echo '<td>' . $offer['date_end'] . '</td>';
+                                                        echo '<td class="' . ($offer['status'] == 'Open' ? 'table-success' : 'table-danger') . '">' . $offer['status'] . '</td>';
+                                                        echo '</tr>';
+
+
+
+
+                                                        $stmtSkills->close();
                                                     }
                                                 }
-                                            }
 
+                                                $stmt->close();
+                                                $connection->close();
+                                            }
                                             ?>
                                         </tbody>
                                     </table>
