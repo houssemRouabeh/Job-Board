@@ -4,7 +4,7 @@ require('../../config/db_connection.php');
 $id = $_SESSION['user_id'];
 // Requête SQL pour récupérer les offres de l'utilisateur
 $sql = "SELECT * FROM offer WHERE id_offer = ?";
-$id_offer = $_GET['offerId'];
+$id_offer = $_GET['offer_id'];
 $stmt = $connection->prepare($sql);
 if ($stmt) {
     $stmt->bind_param('i', $id_offer);
@@ -12,6 +12,33 @@ if ($stmt) {
     $result = $stmt->get_result();
     $offer = $result->fetch_assoc();
 }
+$offer_title = $offer['title'];
+
+$dateCreationString = $offer['date_creation'];
+$dateObject = new DateTime($dateCreationString);
+
+// Récupérer le jour en nombre
+$dayCreationNumber = $dateObject->format('d');
+
+// Récupérer le mois en lettre
+$monthCreationName = $dateObject->format('F');
+
+// Récupérer l'année en nombre
+$yearCreationNumber = $dateObject->format('Y');
+$dateCreationFormat = $dayCreationNumber . ' ' . $monthCreationName . ', ' . $yearCreationNumber; // Formatage de la date de création
+
+$dateExpirationString = $offer['date_end'];
+$dateObject = new DateTime($dateExpirationString);
+
+// Récupérer le jour en nombre
+$dayExpirationNumber = $dateObject->format('d');
+
+// Récupérer le mois en lettre
+$monthExpirationName = $dateObject->format('F');
+
+// Récupérer l'année en nombre
+$yearExpirationNumber = $dateObject->format('Y');
+$dateExpirationFormat = $dayExpirationNumber . ' ' . $monthExpirationName . ', ' . $yearExpirationNumber; // Formatage de la date d'expiration
 
 $skillsQuery = "SELECT id_skill, name FROM skills";
 $skillsResult = $connection->query($skillsQuery);
@@ -24,7 +51,7 @@ if ($skillsResult) {
     // Handle the error if the skills query fails
     echo "Error fetching skills: " . $connection->error;
 }
-// ... (votre code existant)
+
 
 $selectedSkills = array();
 
@@ -46,62 +73,37 @@ if ($stmtSkills) {
     // Gérer l'erreur si la requête échoue
     echo "Error fetching selected skills: " . $connection->error;
 }
+//requette pour importer les données du createur d'emploi
+$sql = "SELECT * FROM employer WHERE id_user = ?";
+$stmt = $connection->prepare($sql);
+$id_employer = $offer['id_user'];
+if ($stmt) {
+    $stmt->bind_param('i', $id_employer);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $employer = $result->fetch_assoc();
+        $offer_logo = $employer['logo'];
+    }
+}
 
+//requette pour verifier si l'utilisateur a postuler  ou non a cette offre
+$sql = "SELECT * FROM job_application WHERE id_user = ? AND id_offer = ?";
+$stmt = $connection->prepare($sql);
+$id_employer = $offer['id_user'];
+$havePosytuled = false;
+if ($stmt) {
+    $stmt->bind_param('ii', $id, $id_offer);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows == 1) {
+        $havePosytuled = true;
+    }
+}
 
 // Close the skills query result
 $skillsResult->close();
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_offer'])) {
-    // Retrieve other job-related details from the form
-    $jobTitle = $_POST['jobTitle'];
-    $jobDesc = $_POST['jobDesc'];
-    $salary = $_POST['salary'];
-    $dateDuJour = new DateTime();
-    $createdAt = $dateDuJour->format("Y-m-d H:i:s");
-    $dateExp = $_POST['dateExp'];
-    $expirationDateTime = new DateTime($dateExp . ' ' . $dateDuJour->format('H:i:s'));
-    $expirationDate = $expirationDateTime->format("Y-m-d H:i:s");
-    $status =  ($expirationDate - $createdAt < 0) ? 'Expired' : 'Open';
 
-
-
-    $updateOfferSQL = "UPDATE offer SET title = ?, description = ?, salary = ?, date_end = ?, status=? WHERE id_offer = ?";
-    $stmtUpdateOffer = $connection->prepare($updateOfferSQL);
-
-    if ($stmtUpdateOffer) {
-        $stmtUpdateOffer->bind_param("ssissi", $jobTitle, $jobDesc, $salary, $expirationDate, $status, $id_offer);
-        $stmtUpdateOffer->execute();
-        $stmtUpdateOffer->close();
-
-        // Supprimer d'abord les compétences existantes associées à l'offre
-        $deleteSkillsSQL = "DELETE FROM offer_skills WHERE id_offer = ?";
-        $stmtDeleteSkills = $connection->prepare($deleteSkillsSQL);
-
-        if ($stmtDeleteSkills) {
-            $stmtDeleteSkills->bind_param("i", $id_offer);
-            $stmtDeleteSkills->execute();
-            $stmtDeleteSkills->close();
-
-            // Insérer ensuite les compétences sélectionnées
-            if (isset($_POST['tags']) && is_array($_POST['tags'])) {
-                $insertSkillsSQL = "INSERT INTO offer_skills (id_offer, id_skill) VALUES (?, ?)";
-                $stmtInsertSkills = $connection->prepare($insertSkillsSQL);
-
-                foreach ($_POST['tags'] as $selectedSkillId) {
-                    $stmtInsertSkills->bind_param("ii", $id_offer, $selectedSkillId);
-                    $stmtInsertSkills->execute();
-                }
-
-                $stmtInsertSkills->close();
-            }
-
-            header("location:index.php");
-        } else {
-            echo "Error deleting existing skills: " . $connection->error;
-        }
-    } else {
-        echo "Error updating offer details: " . $connection->error;
-    }
-}
 $connection->close();
 
 ?>
@@ -117,7 +119,7 @@ $connection->close();
     <meta name="author" content="">
 
     <title>Employer - Dashboard</title>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Custom fonts for this template-->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
@@ -133,7 +135,7 @@ $connection->close();
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <?php include 'employerSidebar.php'; ?>
+        <?php include 'employeeSidebar.php'; ?>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -143,7 +145,7 @@ $connection->close();
             <div id="content">
 
                 <!-- Topbar -->
-                <?php include 'employerNav.php' ?>
+                <?php include 'employeeNav.php' ?>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
@@ -154,65 +156,85 @@ $connection->close();
                         <h1 class="h3 mb-0 text-gray-800">Offer Details</h1>
                     </div>
 
-
-
-
+                    <!-- Page content-->
                     <div class="container">
-                        <div class="row">
-                            <div class="p-5 col-md-12">
-                                <form class="user" method="post" action="">
-                                    <div class="row">
-                                        <div class="form-group col">
-                                            <label for="jobTitle">Job Title</label>
-                                            <input type="text" class="form-control" id="jobTitle" name="jobTitle" required value="<?php echo $offer['title']  ?>">
-                                        </div>
+                        <div class="row mt-4">
+                            <!-- Blog entries-->
+                            <div class="col-lg-8">
+                                <!-- Featured blog post-->
+                                <div class="card mb-4">
+                                    <a href="#!"><img class="card-img-top" src="<?php echo '../employer/' . $offer_logo; ?>" alt="company logo" /></a>
+                                    <div class="card-body">
+                                        <div class="small text-muted">Published : <?php echo $dateCreationFormat; ?></div>
+                                        <h2 class="card-title"><?php echo $offer_title; ?></h2>
+                                        <p class="card-text">
+                                            <?php echo $offer['description']; ?>
+                                        </p>
+                                        <a class="btn btn-primary" href="companyDetails.php?company_id=<?php echo $offer['id_user']; ?>">About Company →</a>
                                     </div>
-                                    <div class="row">
-                                        <div class="form-group col">
-                                            <label for="jobDesc">Job Description</label>
-                                            <textarea type="text" class="form-control" id="jobDesc" name="jobDesc" rows="5" required><?php echo $offer['description']  ?></textarea>
-                                        </div>
+                                </div>
+                            </div>
+                            <!-- Side widgets-->
+                            <div class="col-lg-4">
+                                <!-- Search widget-->
+                                <div class="card mb-4">
+                                    <div class="card-header">Application Deadline</div>
+                                    <div class="card-body">
+                                        <h2 class="text-primary"><?php echo $dateExpirationFormat; ?></h2>
                                     </div>
+                                </div>
+                                <!-- Categories widget-->
+                                <div class="card mb-4">
+                                    <div class="card-header">Skills</div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <ul class="list-unstyled mb-0">
+                                                    <?php
+                                                    // Requête SQL pour récupérer les compétences associées à l'offre
+                                                    $sqlSkills = "SELECT name FROM skills s, offer_skills os WHERE os.id_skill = s.id_skill AND id_offer = ?";
+                                                    $stmtSkills = $connection->prepare($sqlSkills);
 
-                                    <div class="row">
-                                        <div class="form-group col">
-                                            <label for="tags">Skills</label>
-                                            <select class="form-control" id="tags" name="tags[]" multiple>
+                                                    if ($stmtSkills) {
+                                                        $stmtSkills->bind_param('i', $id_offer);
+                                                        $stmtSkills->execute();
+                                                        $resultSkills = $stmtSkills->get_result();
 
-                                                <?php
-                                                // Loop through skills array to populate the <select> options
-                                                foreach ($skillsArray as $skillId => $skillName) {
-                                                    $selected = in_array($skillId, $selectedSkills) ? 'selected' : '';
-                                                    echo "<option value=\"$skillId\" $selected>$skillName</option>";
-                                                }
-                                                ?>
-                                            </select>
+                                                        // Boucle pour parcourir les compétences
+                                                        $skillsArray = [];
+                                                        while ($skill = $resultSkills->fetch_assoc()) {
+                                                            $skillsArray[] = $skill['name'];
+                                                        }
+
+                                                        // Affichage des compétences dans une liste
+                                                        foreach ($skillsArray as $skillName) {
+                                                            echo "<li>{$skillName}</li>";
+                                                        }
+                                                    }
+                                                    ?>
+                                                </ul>
+                                            </div>
+
                                         </div>
                                     </div>
-                                    <div class="row d-flex align-items-end">
-                                        <div class="form-group col">
-                                            <label for="salary">Salary</label>
-                                            <input type="number" class="form-control" id="salary" name="salary" required value="<?php echo $offer['salary']  ?>">
-                                        </div>
-                                        <div class="form-group col">
-                                            <label for="dateExp">Expiration Date</label>
-                                            <?php
-                                            // Convertir la date de la base de données au format "YYYY-MM-DD"
-                                            $formattedDate = date('Y-m-d', strtotime($offer['date_end']));
-                                            ?>
-                                            <input type="date" class="form-control" id="dateExp" name="dateExp" required min="<?= date('Y-m-d') ?>" value="<?php echo $formattedDate ?>">
-                                        </div>
-                                    </div>
-                                    <button type="submit" name="add_offer" class="btn btn-primary btn-user btn-block">
-                                        Add Offer
-                                    </button>
+                                </div>
+                                <!-- Side widget-->
+                                <div class="card mb-4">
 
-                                </form>
+                                    <?php
+                                    if ($havePosytuled) {
+                                        echo "<a class='btn btn-danger' href='cancelApplication.php?offer_id=$id_offer&offer_name=$offer_title'>Cancel your application →</a>";
+                                    } else {
+                                        echo "<a class='btn btn-primary' href='jobApplication.php?offer_id=$id_offer&offer_name=$offer_title'>Send in your application →</a>";
+                                    }
+
+                                    ?>
+
+
+                                </div>
                             </div>
                         </div>
                     </div>
-
-
 
 
                 </div>
@@ -271,9 +293,7 @@ $connection->close();
             <script src="js/demo/chart-area-demo.js"></script>
             <script src="js/demo/chart-pie-demo.js"></script>
             <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-            <script>
-
-            </script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 </body>
 

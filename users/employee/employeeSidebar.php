@@ -30,9 +30,8 @@
         </a>
         <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Offers Edit:</h6>
-                <a class="collapse-item" href="addOffer.php">Add Offer</a>
-                <a class="collapse-item" href="offersList.php">My Offers</a>
+                <h6 class="collapse-header">Jobs :</h6>
+                <a class="collapse-item" href="addOffer.php">My Applications</a>
             </div>
         </div>
     </li>

@@ -79,6 +79,33 @@ if ($stmt_experience) {
         line-height: 1.428571429;
         border-radius: 25px;
     }
+
+    .image-container {
+        position: relative;
+    }
+
+    .overlay-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: darkcyan;
+        /* Couleur du texte */
+        font-size: 26px;
+        /* Taille du texte */
+        font-weight: bolder;
+        text-align: center;
+        /* Gras */
+        opacity: 0;
+        /* Caché par défaut */
+        transition: opacity 0.3s ease-in-out;
+        /* Animation de transition */
+    }
+
+    .image-container:hover .overlay-text {
+        opacity: 1;
+        /* Affiche le texte lorsqu'on survole l'image */
+    }
 </style>
 
 <body id="page-top">
@@ -112,15 +139,22 @@ if ($stmt_experience) {
 
 
                     <div class="container">
+                        <div class="d-flex justify-content-center mb-4">
+                            <label for="customFile2" class="image-container">
+                                <img id="selectedAvatar" src="<?php echo $employee['profile_image'] ? $employee['profile_image'] : 'img/undraw_profile.svg'; ?>" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover; cursor: pointer;" alt="example placeholder" />
+                                <div class="overlay-text">Click to Change Photo</div>
+                            </label>
+                        </div>
                         <div class="d-flex justify-content-center">
                             <form action="upload_image.php" method="post" enctype="multipart/form-data">
-                                <label class="btn btn-primary btn-rounded">
-                                    <span>Choose file</span>
-                                    <input type="file" class="form-control d-none" id="customFile2" name="profile_image" onchange="displaySelectedImage(event, 'selectedAvatar')" />
-                                </label>
-                                <button type="submit" class="btn btn-success">Upload</button>
+
+                                <input type="file" class="form-control" id="customFile2" name="profile_image" style="display: none;" required />
+
+                                <button type="submit" class="btn btn-success">Change Photo</button>
                             </form>
                         </div>
+
+
 
                         <div class="row">
                             <div class="p-5 col-md-12">
@@ -172,7 +206,7 @@ if ($stmt_experience) {
                                         <div class='row'>
                                             <div class='form-group col'>
                                                 <label for='degree_type_$index'>Degree Type</label>
-                                                <select class='form-control' name='degree_type_$index' id='degree_type_$index'>
+                                                <select class='form-control' name='degree_type_$index' id='degree_type_$index' disabled>
                                                     <option value='Certificate' " . ($education['degree_type'] == 'Certificate' ? 'selected' : '') . ">Certificate</option>
                                                     <option value='Bachelor' " . ($education['degree_type'] == 'Bachelor' ? 'selected' : '') . ">Bachelor</option>
                                                     <option value='Master Degree' " . ($education['degree_type'] == 'Master Degree' ? 'selected' : '') . ">Master Degree</option>
@@ -181,23 +215,23 @@ if ($stmt_experience) {
                                             </div>
                                             <div class='form-group col'>
                                                 <label for='field_of_study_$index'>Discipline</label>
-                                                <input type='text' class='form-control' id='field_of_study_$index' name='field_of_study_$index' value='{$education['field_of_study']}' required>
+                                                <input type='text' class='form-control' id='field_of_study_$index' name='field_of_study_$index' value='{$education['field_of_study']}' required disabled>
                                             </div>
                                         </div>
                                         <div class='row'>
                                             <div class='form-group col'>
                                                 <label for='institution_$index'>Institution Name</label>
-                                                <input type='text' class='form-control' id='institution_$index' name='institution_$index' value='{$education['institution']}' required>
+                                                <input type='text' class='form-control' id='institution_$index' name='institution_$index' value='{$education['institution']}' required disabled>
                                             </div>
                                             <div class='form-group col'>
                                                 <label for='graduation_year_$index'>Graduation Year</label>
-                                                <input type='number' class='form-control' id='graduation_year_$index' name='graduation_year_$index' value='{$education['graduation_year']}' required>
+                                                <input type='number' class='form-control' id='graduation_year_$index' name='graduation_year_$index' value='{$education['graduation_year']}' required disabled>
                                             </div>
                                         </div>
                                         <div class='row'>
                                             <div class='form-group col'>
                                                 <label for='additional_notes_$index'>Degree Description</label>
-                                                <textarea type='text' class='form-control' id='additional_notes_$index' name='additional_notes_$index' rows='3'>{$education['additional_notes']}</textarea>
+                                                <textarea type='text' class='form-control' id='additional_notes_$index' name='additional_notes_$index' rows='3' disabled>{$education['additional_notes']}</textarea>
                                             </div>
                                         </div>
                                         <hr>";
@@ -218,27 +252,27 @@ if ($stmt_experience) {
     <div class='row'>
         <div class='form-group col'>
             <label for='job_title_$index'>Job Title</label>
-            <input type='text' class='form-control' id='job_title_$index'' name='job_title_$index'value='{$experience['job_title']}'  required>
+            <input type='text' class='form-control' id='job_title_$index'' name='job_title_$index'value='{$experience['job_title']}'  required disabled>
         </div>
         <div class='form-group col'>
             <label for='employer_' . $index . ''>Employer</label>
-            <input type='text' class='form-control' id='employer_' . $index . '' name='employer_' . $index . '' value='{$experience['company']}' required>
+            <input type='text' class='form-control' id='employer_' . $index . '' name='employer_' . $index . '' value='{$experience['company']}' required disabled>
         </div>
     </div>
     <div class='row'>
         <div class='form-group col'>
             <label for='start_date_' . $index . ''>Start Date</label>
-            <input type='date' class='form-control' id='start_date_' . $index . '' name='start_date_' . $index . '' value='{$experience['start_date']}' required>
+            <input type='date' class='form-control' id='start_date_' . $index . '' name='start_date_' . $index . '' value='{$experience['start_date']}' required disabled>
         </div>
         <div class='form-group col'>
             <label for='end_date_' . $index . ''>End Date</label>
-            <input type='date' class='form-control' id='end_date_' . $index . '' name='end_date_' . $index . '' value='{$experience['end_date']}'>
+            <input type='date' class='form-control' id='end_date_' . $index . '' name='end_date_' . $index . '' value='{$experience['end_date']}' disabled>
         </div>
     </div>
     <div class='row'>
         <div class='form-group col'>
             <label for='job_description_' . $index . ''>Job Description</label>
-            <textarea type='text' class='form-control' id='job_description_' . $index . '' name='job_description_' . $index . '' rows='3' >{$experience['achievements']}</textarea>
+            <textarea type='text' class='form-control' id='job_description_' . $index . '' name='job_description_' . $index . '' rows='3'disabled >{$experience['achievements']}</textarea>
         </div>
     </div>
     <hr>";

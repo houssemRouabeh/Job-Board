@@ -12,7 +12,7 @@ if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == UPLO
     // Vérifiez si le fichier a été téléchargé avec succès
     if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadFile)) {
         // Mettez à jour le chemin de l'image dans la base de données
-        $updateImageQuery = "UPDATE employee SET profile_image = ? WHERE id_user = ?";
+        $updateImageQuery = "UPDATE employer SET logo = ? WHERE id_user = ?";
         $stmt = $connection->prepare($updateImageQuery);
 
         if ($stmt) {

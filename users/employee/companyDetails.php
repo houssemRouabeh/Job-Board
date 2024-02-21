@@ -5,9 +5,9 @@ $id = $_SESSION['user_id'];
 //requette pour importer les données de l'utilisateur
 $sql = "SELECT * FROM employer WHERE id_user = ?";
 $stmt = $connection->prepare($sql);
-
+$company_id = $_GET['company_id'];
 if ($stmt) {
-    $stmt->bind_param('i', $id);
+    $stmt->bind_param('i', $company_id);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
@@ -102,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <?php include 'employerSidebar.php'; ?>
+        <?php include 'employeeSidebar.php'; ?>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -112,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div id="content">
 
                 <!-- Topbar -->
-                <?php include 'employerNav.php' ?>
+                <?php include 'employeeNav.php' ?>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
@@ -129,18 +129,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="container">
                         <div class="d-flex justify-content-center mb-4">
                             <label for="customFile2" class="image-container">
-                                <img id="selectedAvatar" src="<?php echo $employer['logo'] ? $employer['logo'] : 'img/undraw_profile.svg'; ?>" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover; cursor: pointer;" alt="example placeholder" />
-                                <div class="overlay-text">Click to Change Logo</div>
+                                <img id="selectedAvatar" src="<?php echo $employer['logo'] ? $employer['logo'] : 'img/undraw_profile.svg'; ?>" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" alt="example placeholder" />
+
                             </label>
                         </div>
-                        <div class="d-flex justify-content-center">
-                            <form action="upload_logo.php" method="post" enctype="multipart/form-data">
 
-                                <input type="file" class="form-control" id="customFile2" name="profile_image" style="display: none;" required />
-
-                                <button type="submit" class="btn btn-success">Change Photo</button>
-                            </form>
-                        </div>
                         <div class="row">
                             <div class="p-5 col-md-12">
                                 <form class="user" method="post" action="">
@@ -157,23 +150,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <div class="row">
                                         <div class="form-group col">
                                             <label for="city">City</label>
-                                            <input type="text" class="form-control" id="city" name="city" value="<?php echo $employer['city'] ?>" required>
+                                            <input type="text" class="form-control" id="city" name="city" value="<?php echo $employer['city'] ?>" required disabled>
                                         </div>
                                         <div class="form-group col">
                                             <label for="cp">Postal Code</label>
-                                            <input type="text" class="form-control" id="cp" name="cp" value="<?php echo $employer['postal_code'] ?>" required>
+                                            <input type="text" class="form-control" id="cp" name="cp" value="<?php echo $employer['postal_code'] ?>" required disabled>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="form-group col">
                                             <label for="adress">Adress</label>
-                                            <input type="text" class="form-control" id="adress" name="adress" value="<?php echo $employer['adress'] ?>" required>
+                                            <input type="text" class="form-control" id="adress" name="adress" value="<?php echo $employer['adress'] ?>" required disabled>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="form-group col">
                                             <label for="nbrE">Number of Employees</label>
-                                            <select class="form-control" aria-label="Default select example" name="employeeCount" id="nbrE">
+                                            <select class="form-control" aria-label="Default select example" name="employeeCount" id="nbrE" disabled>
                                                 <?php
                                                 $selected1 = "";
                                                 $selected2 = "";
@@ -213,12 +206,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         </div>
                                         <div class="form-group col">
                                             <label for="phone">Phone</label>
-                                            <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo $employer['phone'] ?>" required>
+                                            <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo $employer['phone'] ?>" required disabled>
                                         </div>
                                     </div>
-                                    <button type="submit" name="update_profile" class="btn btn-primary btn-user btn-block">
-                                        Update profile
-                                    </button>
 
                                 </form>
                             </div>
