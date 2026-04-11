@@ -1,0 +1,38 @@
+name: Security and dependencies audit
+
+on:
+  schedule:
+    - cron: "0 9 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Effectue un audit de sécurité et dépendances :
+
+            1. Lis package.json ou composer.json selon le projet
+            2. Identifie les dépendances avec des versions obsolètes
+            3. Vérifie s'il y a des secrets hardcodés (.env dans git,
+               clés API dans le code, mots de passe)
+
+            Actions :
+            - Mises à jour PATCH et MINOR safe → crée une PR avec
+              les updates, titre "chore: update dependencies"
+            - Mises à jour MAJOR ou breaking → crée une Issue
+              expliquant la migration nécessaire
+            - Secrets trouvés → crée une Issue 🔴 urgente avec
+              la localisation exacte (JAMAIS le secret lui-même)
+
+            Si tout est à jour et propre, crée une Issue verte
+            "✅ Audit sécurité OK - $(date +%d/%m/%Y)".

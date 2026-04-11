@@ -1,0 +1,42 @@
+name: Audit hebdomadaire Claude
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Analyse ce repo en profondeur. Crée une Issue GitHub
+            intitulée "📋 Audit Claude - semaine du $(date +%d/%m/%Y)".
+
+            Structure l'Issue ainsi :
+            ## État général
+            [1 paragraphe de synthèse]
+
+            ## 🔴 Priorité haute
+            [bugs visibles, failles de sécurité, dépendances vulnérables]
+
+            ## 🟡 Priorité moyenne  
+            [dépendances obsolètes, code mort, TODOs anciens]
+
+            ## 🟢 Priorité basse
+            [docs manquantes, refacto lisibilité, typos]
+
+            ## ✅ Points positifs
+            [ce qui est bien fait]
+
+            Sois précis : cite les fichiers et lignes concernés.
