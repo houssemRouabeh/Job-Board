@@ -1,13 +1,15 @@
+cat > workflows/claude-docs-sync.yml << 'EOF'
 name: Sync documentation
 
 on:
   schedule:
-    - cron: "0 1 * * *"
+    - cron: '0 1 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   docs:
@@ -20,15 +22,15 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Regarde les commits des dernières 24h avec git log.
-            Si des fichiers de code (.js, .php, .ts) ont changé
-            sans mise à jour correspondante dans la doc :
+            Regarde les commits des dernieres 24h avec git log.
+            Si des fichiers de code (.js, .php, .ts) ont change
+            sans mise a jour correspondante dans la doc :
 
-            1. Mets à jour README.md ou les fichiers dans docs/
-            2. Commite : "docs: sync with $(date +%Y-%m-%d) changes"
+            1. Mets a jour README.md ou les fichiers dans docs/
+            2. Commite : "docs: sync with recent changes"
             3. Si les changements sont importants, ouvre une PR
-               nommée "docs: automated sync $(date +%Y-%m-%d)"
+               nommee "docs: automated sync"
 
-            Ne touche QU'aux fichiers .md.
-            Si rien n'a changé dans le code aujourd'hui, ne fais rien.
-          claude_args: "--allowedTools Edit(**.md),Bash(git log*),Bash(git diff*),Bash(git add*),Bash(git commit*)"
+            Ne touche QU aux fichiers .md.
+            Si rien n a change dans le code aujourd hui, ne fais rien.
+EOF

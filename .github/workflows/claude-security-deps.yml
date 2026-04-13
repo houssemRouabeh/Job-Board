@@ -1,14 +1,16 @@
+cat > workflows/claude-security-deps.yml << 'EOF'
 name: Security and dependencies audit
 
 on:
   schedule:
-    - cron: "0 9 * * 5"
+    - cron: '0 9 * * 5'
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 jobs:
   security:
@@ -19,20 +21,18 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Effectue un audit de sécurité et dépendances :
+            Effectue un audit de securite et dependances :
 
             1. Lis package.json ou composer.json selon le projet
-            2. Identifie les dépendances avec des versions obsolètes
-            3. Vérifie s'il y a des secrets hardcodés (.env dans git,
-               clés API dans le code, mots de passe)
+            2. Identifie les dependances avec des versions obsoletes
+            3. Verifie s il y a des secrets hardcodes
 
             Actions :
-            - Mises à jour PATCH et MINOR safe → crée une PR avec
-              les updates, titre "chore: update dependencies"
-            - Mises à jour MAJOR ou breaking → crée une Issue
-              expliquant la migration nécessaire
-            - Secrets trouvés → crée une Issue 🔴 urgente avec
-              la localisation exacte (JAMAIS le secret lui-même)
+            - Mises a jour PATCH et MINOR safe : cree une PR
+              titre "chore: update dependencies"
+            - Mises a jour MAJOR : cree une Issue explicative
+            - Secrets trouves : cree une Issue urgente avec
+              la localisation exacte (JAMAIS le secret lui-meme)
 
-            Si tout est à jour et propre, crée une Issue verte
-            "✅ Audit sécurité OK - $(date +%d/%m/%Y)".
+            Si tout est propre, cree une Issue "Audit securite OK".
+EOF

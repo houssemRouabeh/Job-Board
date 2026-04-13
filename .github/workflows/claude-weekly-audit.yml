@@ -1,13 +1,15 @@
+cat > workflows/claude-weekly-audit.yml << 'EOF'
 name: Audit hebdomadaire Claude
 
 on:
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: '0 8 * * 1'
   workflow_dispatch:
 
 permissions:
   contents: read
   issues: write
+  id-token: write
 
 jobs:
   audit:
@@ -20,23 +22,24 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Analyse ce repo en profondeur. Crée une Issue GitHub
-            intitulée "📋 Audit Claude - semaine du $(date +%d/%m/%Y)".
+            Analyse ce repo en profondeur. Cree une Issue GitHub
+            intitulee "Audit Claude - semaine du $(date +%d/%m/%Y)".
 
-            Structure l'Issue ainsi :
-            ## État général
-            [1 paragraphe de synthèse]
+            Structure l Issue ainsi :
+            ## Etat general
+            [1 paragraphe de synthese]
 
-            ## 🔴 Priorité haute
-            [bugs visibles, failles de sécurité, dépendances vulnérables]
+            ## Priorite haute
+            [bugs visibles, failles de securite, dependances vulnerables]
 
-            ## 🟡 Priorité moyenne  
-            [dépendances obsolètes, code mort, TODOs anciens]
+            ## Priorite moyenne
+            [dependances obsoletes, code mort, TODOs anciens]
 
-            ## 🟢 Priorité basse
-            [docs manquantes, refacto lisibilité, typos]
+            ## Priorite basse
+            [docs manquantes, refacto lisibilite, typos]
 
-            ## ✅ Points positifs
+            ## Points positifs
             [ce qui est bien fait]
 
-            Sois précis : cite les fichiers et lignes concernés.
+            Sois precis : cite les fichiers et lignes concernes.
+EOF
