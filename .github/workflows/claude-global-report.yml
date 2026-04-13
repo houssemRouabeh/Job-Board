@@ -2,11 +2,6 @@ name: Rapport global de tous les repos
 
 on:
   workflow_dispatch:
-    inputs:
-      repos:
-        description: "Laisser vide pour tous les repos (ou lister: repo1,repo2)"
-        required: false
-        default: ""
 
 permissions:
   contents: write
@@ -20,68 +15,63 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_tools: "mcp__github__list_repositories,mcp__github__get_repository,mcp__github__list_issues,mcp__github__create_issue,Read,Write,Edit,Bash(git*),Bash(find*),Bash(cat*),Bash(ls*)"
+          claude_args: "--allowedTools mcp__github__list_repositories,mcp__github__get_repository,mcp__github__list_issues,mcp__github__get_file_contents,mcp__github__list_repository_contents,Read,Write,Edit,Bash(git*),Bash(find*),Bash(cat*),Bash(ls*) --max-turns 50"
           prompt: |
-            Tu es un auditeur technique senior. Ton travail est d'analyser
-            tous les repos GitHub de l'utilisateur houssemRouabeh et de
-            produire un rapport d'audit complet.
+            Tu es un auditeur technique senior.
 
-            ETAPE 1 - Liste tous les repos via l'API GitHub.
+            ETAPE 1 - Liste tous les repos de houssemRouabeh via l API GitHub
+            en utilisant mcp__github__list_repositories.
 
-            ETAPE 2 - Pour chaque repo, analyse :
-            - Le README pour comprendre le projet
-            - Le package.json ou composer.json pour le stack et les deps
-            - Les fichiers principaux dans src/ ou app/
-            - Les workflows GitHub Actions existants
-            - Les Issues ouvertes
-            - La date du dernier commit
+            ETAPE 2 - Pour chaque repo (ignore _claude-manager),
+            utilise mcp__github__get_file_contents pour lire :
+            - README.md
+            - package.json ou composer.json si present
+            - La liste des fichiers a la racine
 
-            ETAPE 3 - Cree un fichier RAPPORT.md a la racine de ce repo
-            (_claude-manager) avec cette structure exacte :
+            ETAPE 3 - Ecris le fichier RAPPORT.md directement
+            dans le dossier courant avec la commande :
+            Write("RAPPORT.md", contenu_complet)
 
-            ---
-            # Rapport d audit global — [DATE]
+            Structure OBLIGATOIRE du fichier :
+
+            # Rapport audit global — $(date +%d/%m/%Y)
 
             ## Legende
-            - [ ] action proposee (a valider)
-            - [x] action confirmee (Claude executera)
-            - [~] action ignoree (Claude ignorera)
+            - [ ] action proposee (remplacer par [x] pour confirmer)
+            - [~] action a ignorer
 
             ---
 
-            ## [NOM_REPO_1]
-            **Description** : [ce que fait le projet en 1 phrase]
-            **Stack** : [technologies detectees]
-            **Derniere activite** : [date dernier commit]
-            **Etat general** : [Actif / En maintenance / Abandon]
+            ## NOM_REPO
+
+            **Description** : ce que fait le projet
+            **Stack** : technologies detectees
+            **Derniere activite** : date
+            **Etat** : Actif / Maintenance / Abandon / Vide
 
             ### Actions proposees
-            - [ ] SECURITE : [description action specifique]
-            - [ ] DEPS : Mettre a jour [nom dep] de [version] vers [version]
-            - [ ] DOCS : [description action specifique]
-            - [ ] REFACTO : [description action specifique]
-            - [ ] TESTS : [description action specifique]
+            - [ ] SECURITE : description precise
+            - [ ] DEPS : mettre a jour X de vX vers vY
+            - [ ] DOCS : description precise
+            - [ ] REFACTO : description precise
+            - [ ] TESTS : description precise
 
             ---
 
-            ## [NOM_REPO_2]
-            ...
+            (repeter pour chaque repo)
 
             ---
 
             ## Recapitulatif
-            | Repo | Etat | Actions proposees |
-            |------|------|------------------|
-            | repo1 | Actif | 3 actions |
-            ...
 
-            IMPORTANT :
-            - Sois tres precis sur chaque action (cite le fichier exact,
-              la dependance exacte, la ligne exacte si possible)
-            - Ne propose que des actions realisables automatiquement
-            - Classe les actions par priorite dans chaque repo
-            - Si un repo est vide ou archive, indique-le et ne propose
-              pas d actions
+            | Repo | Etat | Nb actions |
+            |------|------|-----------|
+            | x | x | x |
+
+            IMPORTANT : Le fichier RAPPORT.md DOIT etre cree
+            avec la commande Write dans le repertoire courant.
+            C est la tache la plus importante.
