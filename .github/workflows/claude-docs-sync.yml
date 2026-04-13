@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.claude_code_oauth_token }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             Regarde les commits des dernieres 24h avec git log.
             Si des fichiers de code (.js, .php, .ts) ont change
