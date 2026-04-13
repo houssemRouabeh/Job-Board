@@ -1,4 +1,3 @@
-cat > workflows/claude-security-deps.yml << 'EOF'
 name: Security and dependencies audit
 
 on:
@@ -35,4 +34,3 @@ jobs:
               la localisation exacte (JAMAIS le secret lui-meme)
 
             Si tout est propre, cree une Issue "Audit securite OK".
-EOF

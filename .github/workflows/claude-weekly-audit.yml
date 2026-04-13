@@ -1,4 +1,3 @@
-cat > workflows/claude-weekly-audit.yml << 'EOF'
 name: Audit hebdomadaire Claude
 
 on:
@@ -42,4 +41,3 @@ jobs:
             [ce qui est bien fait]
 
             Sois precis : cite les fichiers et lignes concernes.
-EOF

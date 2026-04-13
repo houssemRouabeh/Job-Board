@@ -1,4 +1,3 @@
-cat > workflows/claude-code-quality.yml << 'EOF'
 name: Code quality auto-fix
 
 on:
@@ -33,4 +32,3 @@ jobs:
             INTERDIT : ne change aucune logique, aucun algorithme.
             Ouvre une PR avec la liste precise des changements.
             Si tu ne trouves rien a ameliorer, ne cree pas de branche.
-EOF

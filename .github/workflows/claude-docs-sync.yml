@@ -1,4 +1,3 @@
-cat > workflows/claude-docs-sync.yml << 'EOF'
 name: Sync documentation
 
 on:
@@ -33,4 +32,3 @@ jobs:
 
             Ne touche QU aux fichiers .md.
             Si rien n a change dans le code aujourd hui, ne fais rien.
-EOF
