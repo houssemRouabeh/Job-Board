@@ -1,0 +1,87 @@
+name: Rapport global de tous les repos
+
+on:
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: "Laisser vide pour tous les repos (ou lister: repo1,repo2)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  issues: write
+  id-token: write
+
+jobs:
+  rapport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_tools: "mcp__github__list_repositories,mcp__github__get_repository,mcp__github__list_issues,mcp__github__create_issue,Read,Write,Edit,Bash(git*),Bash(find*),Bash(cat*),Bash(ls*)"
+          prompt: |
+            Tu es un auditeur technique senior. Ton travail est d'analyser
+            tous les repos GitHub de l'utilisateur houssemRouabeh et de
+            produire un rapport d'audit complet.
+
+            ETAPE 1 - Liste tous les repos via l'API GitHub.
+
+            ETAPE 2 - Pour chaque repo, analyse :
+            - Le README pour comprendre le projet
+            - Le package.json ou composer.json pour le stack et les deps
+            - Les fichiers principaux dans src/ ou app/
+            - Les workflows GitHub Actions existants
+            - Les Issues ouvertes
+            - La date du dernier commit
+
+            ETAPE 3 - Cree un fichier RAPPORT.md a la racine de ce repo
+            (_claude-manager) avec cette structure exacte :
+
+            ---
+            # Rapport d audit global — [DATE]
+
+            ## Legende
+            - [ ] action proposee (a valider)
+            - [x] action confirmee (Claude executera)
+            - [~] action ignoree (Claude ignorera)
+
+            ---
+
+            ## [NOM_REPO_1]
+            **Description** : [ce que fait le projet en 1 phrase]
+            **Stack** : [technologies detectees]
+            **Derniere activite** : [date dernier commit]
+            **Etat general** : [Actif / En maintenance / Abandon]
+
+            ### Actions proposees
+            - [ ] SECURITE : [description action specifique]
+            - [ ] DEPS : Mettre a jour [nom dep] de [version] vers [version]
+            - [ ] DOCS : [description action specifique]
+            - [ ] REFACTO : [description action specifique]
+            - [ ] TESTS : [description action specifique]
+
+            ---
+
+            ## [NOM_REPO_2]
+            ...
+
+            ---
+
+            ## Recapitulatif
+            | Repo | Etat | Actions proposees |
+            |------|------|------------------|
+            | repo1 | Actif | 3 actions |
+            ...
+
+            IMPORTANT :
+            - Sois tres precis sur chaque action (cite le fichier exact,
+              la dependance exacte, la ligne exacte si possible)
+            - Ne propose que des actions realisables automatiquement
+            - Classe les actions par priorite dans chaque repo
+            - Si un repo est vide ou archive, indique-le et ne propose
+              pas d actions

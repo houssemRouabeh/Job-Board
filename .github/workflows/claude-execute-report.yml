@@ -1,0 +1,53 @@
+name: Executer les actions du rapport
+
+on:
+  push:
+    paths:
+      - "RAPPORT.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_tools: "mcp__github__create_pull_request,mcp__github__create_issue,mcp__github__update_file,mcp__github__get_file_contents,mcp__github__list_repository_contents,Read,Write,Edit,Bash(git*),Bash(npm*),Bash(composer*)"
+          prompt: |
+            Lis le fichier RAPPORT.md dans ce repo.
+
+            Identifie toutes les lignes cochees avec [x] (confirmes).
+            Ignore les lignes [ ] (non validees) et [~] (ignorees).
+
+            Pour chaque action [x] trouvee :
+
+            1. Identifie le repo concerne (section ## NOM_REPO)
+            2. Clone ce repo ou accede-y via l API GitHub
+            3. Execute l action decrite precisement
+            4. Cree une PR sur le repo concerne avec :
+               - Titre : "chore(claude): [description courte de l action]"
+               - Description : ce qui a ete fait et pourquoi
+               - Branch : "claude/[type-action]-[date]"
+            5. Mets a jour le RAPPORT.md :
+               - Remplace [x] par [FAIT] avec le lien de la PR
+
+            Traite les actions dans cet ordre de priorite :
+            1. SECURITE en premier
+            2. DEPS ensuite
+            3. DOCS
+            4. REFACTO
+            5. TESTS en dernier
+
+            A la fin, cree une Issue dans _claude-manager intitulee
+            "Rapport d execution [DATE]" avec le recapitulatif de
+            tout ce qui a ete fait et les liens vers toutes les PRs.

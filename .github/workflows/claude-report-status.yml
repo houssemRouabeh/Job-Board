@@ -1,0 +1,42 @@
+name: Statut du rapport
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_tools: "mcp__github__list_pull_requests,mcp__github__list_issues,Read,Bash(cat*)"
+          prompt: |
+            Lis le fichier RAPPORT.md.
+
+            Compte :
+            - Combien d actions sont [FAIT]
+            - Combien sont encore [x] a executer
+            - Combien sont [ ] en attente de validation
+            - Combien sont [~] ignorees
+
+            Verifie le statut des PRs creees (merged, open, closed).
+
+            Cree une Issue "Suivi rapport [DATE]" avec ce tableau :
+
+            | Statut | Nombre |
+            |--------|--------|
+            | Terminees | X |
+            | En cours (PRs ouvertes) | X |
+            | A valider | X |
+            | Ignorees | X |
+
+            Et la liste des PRs encore ouvertes avec leur lien.
