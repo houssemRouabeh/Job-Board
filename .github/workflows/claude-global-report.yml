@@ -19,59 +19,56 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--allowedTools mcp__github__list_repositories,mcp__github__get_repository,mcp__github__list_issues,mcp__github__get_file_contents,mcp__github__list_repository_contents,Read,Write,Edit,Bash(git*),Bash(find*),Bash(cat*),Bash(ls*) --max-turns 50"
+          claude_args: "--allowedTools mcp__github__list_repositories,mcp__github__get_repository,mcp__github__get_file_contents,mcp__github__list_repository_contents,Read,Bash(git*),Bash(echo*),Bash(cat*),Bash(ls*),Bash(tee*),Bash(mkdir*) --max-turns 80"
           prompt: |
             Tu es un auditeur technique senior.
 
-            ETAPE 1 - Liste tous les repos de houssemRouabeh via l API GitHub
-            en utilisant mcp__github__list_repositories.
+            ETAPE 1 — Liste tous les repos de houssemRouabeh via
+            mcp__github__list_repositories avec owner="houssemRouabeh".
 
-            ETAPE 2 - Pour chaque repo (ignore _claude-manager),
-            utilise mcp__github__get_file_contents pour lire :
-            - README.md
-            - package.json ou composer.json si present
-            - La liste des fichiers a la racine
+            ETAPE 2 — Pour chaque repo (ignore _claude-manager),
+            lis via mcp__github__get_file_contents :
+            - README.md (si existe)
+            - package.json ou composer.json (si existe)
+            - liste des fichiers racine via mcp__github__list_repository_contents
 
-            ETAPE 3 - Ecris le fichier RAPPORT.md directement
-            dans le dossier courant avec la commande :
-            Write("RAPPORT.md", contenu_complet)
+            ETAPE 3 — Construis le contenu du rapport complet en memoire,
+            puis ecris-le avec cette commande bash exacte :
 
-            Structure OBLIGATOIRE du fichier :
+            Bash("cat > /home/runner/work/_claude-manager/_claude-manager/RAPPORT.md << 'ENDRAPPORT'\n[CONTENU COMPLET ICI]\nENDRAPPORT")
 
-            # Rapport audit global — $(date +%d/%m/%Y)
+            Puis commite avec :
+            Bash("cd /home/runner/work/_claude-manager/_claude-manager && git add RAPPORT.md && git commit -m 'feat: rapport audit global' && git push origin HEAD")
+
+            Structure OBLIGATOIRE du rapport :
+
+            # Rapport audit global — 14/04/2026
 
             ## Legende
-            - [ ] action proposee (remplacer par [x] pour confirmer)
-            - [~] action a ignorer
+            Remplace [ ] par [x] pour confirmer une action, [~] pour ignorer.
 
             ---
 
             ## NOM_REPO
 
-            **Description** : ce que fait le projet
+            **Description** : ce que fait le projet en 1 phrase
             **Stack** : technologies detectees
-            **Derniere activite** : date
+            **Derniere activite** : date dernier commit
             **Etat** : Actif / Maintenance / Abandon / Vide
 
             ### Actions proposees
-            - [ ] SECURITE : description precise
-            - [ ] DEPS : mettre a jour X de vX vers vY
-            - [ ] DOCS : description precise
-            - [ ] REFACTO : description precise
-            - [ ] TESTS : description precise
-
-            ---
-
-            (repeter pour chaque repo)
+            - [ ] SECURITE : fichier exact + description
+            - [ ] DEPS : mettre a jour X de vA vers vB
+            - [ ] DOCS : ce qui manque precisement
+            - [ ] REFACTO : ce qui peut etre ameliore
+            - [ ] TESTS : ce qui manque
 
             ---
 
             ## Recapitulatif
+            | Repo | Etat | Actions |
+            |------|------|---------|
+            | nom | Actif | 4 |
 
-            | Repo | Etat | Nb actions |
-            |------|------|-----------|
-            | x | x | x |
-
-            IMPORTANT : Le fichier RAPPORT.md DOIT etre cree
-            avec la commande Write dans le repertoire courant.
-            C est la tache la plus importante.
+            PRIORITE ABSOLUE : le git push final est obligatoire.
+            Sans lui le fichier est perdu.
