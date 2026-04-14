@@ -18,43 +18,96 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup gh auth
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-
-      - name: Setup git
+      - name: Setup
         run: |
-          git config --global user.email "claude-bot@github.com"
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+          git config --global user.email "claude-bot@users.noreply.github.com"
           git config --global user.name "claude[bot]"
+
+      - name: Executer les actions SECURITE et DOCS
+        run: |
+          OWNER="houssemRouabeh"
+          RAPPORT="/home/runner/work/_claude-manager/_claude-manager/RAPPORT.md"
+
+          process_repo() {
+            local REPO=$1
+            local BRANCH_DEFAULT=$(gh repo view $OWNER/$REPO --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null || echo "main")
+            local TMPDIR="/tmp/work_$REPO"
+
+            echo "=== Traitement de $REPO (branche: $BRANCH_DEFAULT) ==="
+
+            gh repo clone $OWNER/$REPO $TMPDIR -- --quiet 2>/dev/null || return
+
+            cd $TMPDIR
+
+            # .gitignore manquant
+            if grep -q "\[x\].*gitignore" $RAPPORT 2>/dev/null | grep -q "$REPO" || \
+               (grep -A 20 "## $REPO" $RAPPORT | grep -q "\[x\].*gitignore"); then
+              if [ ! -f ".gitignore" ]; then
+                echo "node_modules/" > .gitignore
+                echo ".env" >> .gitignore
+                echo ".env.local" >> .gitignore
+                echo "dist/" >> .gitignore
+                echo "build/" >> .gitignore
+                echo "*.log" >> .gitignore
+                echo "vendor/" >> .gitignore
+                echo ".DS_Store" >> .gitignore
+                BRANCH="claude/add-gitignore-$(date +%Y%m%d)"
+                git checkout -b $BRANCH
+                git add .gitignore
+                git commit -m "chore(claude): add .gitignore"
+                git push origin $BRANCH
+                gh pr create \
+                  --title "chore(claude): add .gitignore" \
+                  --body "Ajout du fichier .gitignore manquant detecte lors de l audit automatique." \
+                  --base $BRANCH_DEFAULT \
+                  --repo $OWNER/$REPO
+                echo "PR .gitignore creee pour $REPO"
+                git checkout $BRANCH_DEFAULT
+              fi
+            fi
+
+            cd /tmp
+            rm -rf $TMPDIR
+          }
+
+          # Traite chaque repo du rapport
+          for REPO in toDoList e-shop bug-tracker-app learning-platform Job-Board to-do-list Bitchest-project houssemRouabeh; do
+            process_repo $REPO || echo "Erreur sur $REPO, on continue"
+          done
 
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--max-turns 80"
+          claude_args: "--max-turns 60 --print"
+          show_full_output: "true"
           prompt: |
-            Le fichier RAPPORT.md se trouve ici :
-            /home/runner/work/_claude-manager/_claude-manager/RAPPORT.md
+            Pour chacun de ces repos GitHub de houssemRouabeh,
+            genere un README.md professionnel en lisant les fichiers
+            du repo via la commande gh :
 
-            Lis-le d abord avec :
-            cat /home/runner/work/_claude-manager/_claude-manager/RAPPORT.md
+            gh api repos/houssemRouabeh/NOM_REPO/contents/package.json \
+              --jq '.content' | base64 -d
 
-            Ce fichier contient une liste de repos GitHub avec des actions.
-            Les actions marquees [x] sont a executer.
-            Les actions marquees [ ] ou [~] sont a ignorer.
+            Repos a traiter :
+            - toDoList
+            - e-shop
+            - bug-tracker-app
+            - learning-platform
+            - Job-Board
+            - to-do-list
+            - Bitchest-project
 
-            Pour chaque section ## NOM_REPO du fichier :
+            Pour chaque repo :
+            1. Lis package.json ou composer.json
+            2. Genere un README.md avec : description, stack,
+               installation, configuration, utilisation
+            3. Clone le repo, ecris le README, cree une PR
 
-            1. Note le nom exact du repo (ex: "e-shop", "Job-Board", "toDoList")
-
-            2. Pour chaque action [x] dans cette section :
-               - Clone le repo dans /tmp/NOM_REPO
-               - Cree une branche claude/action-NOM_REPO
-               - Applique le changement demande
-               - Cree une PR vers la branche principale
-
-            3. Apres toutes les actions, genere aussi un README.md
-               professionnel pour chaque repo et cree une PR separee
-
-            Les commandes disponibles sont gh et git.
-            Le token gh est deja configure.
-            Travaille repo par repo, un a la fois.
-            Commence par e-shop (SECURITE CRITIQUE).
+            Structure README :
+            # Nom projet
+            > Description
+            ## Stack
+            ## Installation
+            ## Configuration
+            ## Utilisation
