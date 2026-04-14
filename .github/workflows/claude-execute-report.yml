@@ -17,82 +17,46 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup gh auth
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--allowedTools mcp__github__create_pull_request,mcp__github__get_file_contents,mcp__github__list_repository_contents,mcp__github__create_or_update_file,mcp__github__get_repository,Read,Bash(git*),Bash(cat*),Bash(echo*) --max-turns 80"
+          claude_args: "--max-turns 80"
           prompt: |
-            Lis le fichier RAPPORT.md dans ce repo (_claude-manager).
+            Tu es un assistant qui execute des taches sur des repos GitHub.
+            Tu as acces a la commande `gh` pour interagir avec GitHub.
 
-            MISSION 1 — Executer les actions confirmees [x]
+            ETAPE 1 — Lis le fichier RAPPORT.md :
+            Bash("cat /home/runner/work/_claude-manager/_claude-manager/RAPPORT.md")
 
-            Pour chaque ligne [x] dans le rapport :
-            1. Identifie le repo concerne (section ## NOM_REPO)
-            2. Execute l action via l API GitHub :
-               - Pour SECURITE/.gitignore : cree ou mets a jour le fichier
-                 via mcp__github__create_or_update_file
-               - Pour DEPS : mets a jour le fichier package.json ou
-                 composer.json avec la nouvelle version
-               - Pour DOCS simples : cree ou complete le fichier concerne
-            3. Cree une PR sur le repo avec :
-               - Branch : claude/[type]-[repo]-[date courte]
-               - Titre : "chore(claude): [description courte]"
-               - Body : ce qui a ete fait et pourquoi
+            ETAPE 2 — Pour chaque action [x] trouvee dans le rapport,
+            identifie le repo (section ## NOM_REPO) et execute :
 
-            MISSION 2 — Generer un README.md pour chaque repo
+            Pour un .gitignore manquant sur REPO :
+            Bash("gh repo clone houssemRouabeh/REPO /tmp/REPO && cd /tmp/REPO && echo 'node_modules/\n.env\n.env.local\ndist/\nbuild/\n*.log' > .gitignore && git add .gitignore && git checkout -b claude/add-gitignore && git commit -m 'chore(claude): add .gitignore' && gh pr create --title 'chore(claude): add .gitignore' --body 'Ajout du fichier .gitignore manquant' --base main")
 
-            Pour chaque repo dans le rapport (meme les [~] et [ ]) :
-            1. Lis les fichiers existants via mcp__github__get_file_contents
-               (package.json, composer.json, fichiers src/)
-            2. Genere un README.md professionnel avec ces sections :
+            Pour un README manquant ou a ameliorer sur REPO :
+            Bash("gh repo clone houssemRouabeh/REPO /tmp/REPO2 && cd /tmp/REPO2 && cat package.json 2>/dev/null || cat composer.json 2>/dev/null")
+            Puis cree un README.md professionnel et :
+            Bash("cd /tmp/REPO2 && git checkout -b claude/readme && git add README.md && git commit -m 'docs(claude): add professional README' && gh pr create --title 'docs(claude): add professional README' --body 'README professionnel genere automatiquement'")
 
-            # Nom du projet
+            ETAPE 3 — Pour chaque repo du rapport, genere un README.md
+            professionnel meme si non marque [x], avec ces sections :
+            - Description
+            - Fonctionnalites
+            - Stack technique
+            - Installation
+            - Configuration
+            - Utilisation
 
-            > Description courte et precise
+            ETAPE 4 — Mets a jour RAPPORT.md avec les PRs creees :
+            Bash("cd /home/runner/work/_claude-manager/_claude-manager && sed -i 's/\[x\] /[FAIT] /g' RAPPORT.md && git add RAPPORT.md && git commit -m 'chore: mark executed actions in rapport' && git push origin HEAD")
 
-            ## Fonctionnalites
-            - Liste des fonctionnalites principales
-
-            ## Stack technique
-            - Frontend / Backend / BDD
-
-            ## Installation
-            \`\`\`bash
-            # commandes d installation
-            \`\`\`
-
-            ## Configuration
-            Variables d environnement requises :
-            \`\`\`
-            VAR=valeur
-            \`\`\`
-
-            ## Utilisation
-            \`\`\`bash
-            # commandes pour lancer le projet
-            \`\`\`
-
-            ## Structure du projet
-            \`\`\`
-            arborescence simplifiee
-            \`\`\`
-
-            3. Cree une PR "docs(claude): add professional README" sur
-               chaque repo via mcp__github__create_pull_request
-
-            MISSION 3 — Mettre a jour RAPPORT.md
-
-            Apres chaque action executee, mets a jour le fichier RAPPORT.md :
-            - Remplace [x] par [FAIT - PR #N] avec le numero de la PR
-            - Ajoute a la fin du fichier un tableau "Execution" :
-
-            ## Execution du [DATE]
-            | Repo | Action | PR | Statut |
-            |------|--------|-----|--------|
-            | nom | description | #N | Ouvert |
-
-            Puis commite et pushe le RAPPORT.md mis a jour :
-            Bash("cd /home/runner/work/_claude-manager/_claude-manager && git add RAPPORT.md && git commit -m 'chore: update rapport with execution status' && git push origin HEAD")
-
-            IMPORTANT : Traite les actions SECURITE en premier,
-            puis DEPS, puis DOCS, puis README.
+            IMPORTANT :
+            - Utilise uniquement des commandes Bash avec gh et git
+            - Pour chaque PR, verifie si la branche existe deja avant
+            - Si gh pr create echoue car la branche existe, continue
+            - Le token gh est deja configure, pas besoin de login
