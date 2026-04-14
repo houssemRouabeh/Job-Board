@@ -1,9 +1,6 @@
 name: Executer les actions du rapport
 
 on:
-  push:
-    paths:
-      - "RAPPORT.md"
   workflow_dispatch:
 
 permissions:
@@ -19,35 +16,83 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_tools: "mcp__github__create_pull_request,mcp__github__create_issue,mcp__github__update_file,mcp__github__get_file_contents,mcp__github__list_repository_contents,Read,Write,Edit,Bash(git*),Bash(npm*),Bash(composer*)"
+          claude_args: "--allowedTools mcp__github__create_pull_request,mcp__github__get_file_contents,mcp__github__list_repository_contents,mcp__github__create_or_update_file,mcp__github__get_repository,Read,Bash(git*),Bash(cat*),Bash(echo*) --max-turns 80"
           prompt: |
-            Lis le fichier RAPPORT.md dans ce repo.
+            Lis le fichier RAPPORT.md dans ce repo (_claude-manager).
 
-            Identifie toutes les lignes cochees avec [x] (confirmes).
-            Ignore les lignes [ ] (non validees) et [~] (ignorees).
+            MISSION 1 — Executer les actions confirmees [x]
 
-            Pour chaque action [x] trouvee :
-
+            Pour chaque ligne [x] dans le rapport :
             1. Identifie le repo concerne (section ## NOM_REPO)
-            2. Clone ce repo ou accede-y via l API GitHub
-            3. Execute l action decrite precisement
-            4. Cree une PR sur le repo concerne avec :
-               - Titre : "chore(claude): [description courte de l action]"
-               - Description : ce qui a ete fait et pourquoi
-               - Branch : "claude/[type-action]-[date]"
-            5. Mets a jour le RAPPORT.md :
-               - Remplace [x] par [FAIT] avec le lien de la PR
+            2. Execute l action via l API GitHub :
+               - Pour SECURITE/.gitignore : cree ou mets a jour le fichier
+                 via mcp__github__create_or_update_file
+               - Pour DEPS : mets a jour le fichier package.json ou
+                 composer.json avec la nouvelle version
+               - Pour DOCS simples : cree ou complete le fichier concerne
+            3. Cree une PR sur le repo avec :
+               - Branch : claude/[type]-[repo]-[date courte]
+               - Titre : "chore(claude): [description courte]"
+               - Body : ce qui a ete fait et pourquoi
 
-            Traite les actions dans cet ordre de priorite :
-            1. SECURITE en premier
-            2. DEPS ensuite
-            3. DOCS
-            4. REFACTO
-            5. TESTS en dernier
+            MISSION 2 — Generer un README.md pour chaque repo
 
-            A la fin, cree une Issue dans _claude-manager intitulee
-            "Rapport d execution [DATE]" avec le recapitulatif de
-            tout ce qui a ete fait et les liens vers toutes les PRs.
+            Pour chaque repo dans le rapport (meme les [~] et [ ]) :
+            1. Lis les fichiers existants via mcp__github__get_file_contents
+               (package.json, composer.json, fichiers src/)
+            2. Genere un README.md professionnel avec ces sections :
+
+            # Nom du projet
+
+            > Description courte et precise
+
+            ## Fonctionnalites
+            - Liste des fonctionnalites principales
+
+            ## Stack technique
+            - Frontend / Backend / BDD
+
+            ## Installation
+            \`\`\`bash
+            # commandes d installation
+            \`\`\`
+
+            ## Configuration
+            Variables d environnement requises :
+            \`\`\`
+            VAR=valeur
+            \`\`\`
+
+            ## Utilisation
+            \`\`\`bash
+            # commandes pour lancer le projet
+            \`\`\`
+
+            ## Structure du projet
+            \`\`\`
+            arborescence simplifiee
+            \`\`\`
+
+            3. Cree une PR "docs(claude): add professional README" sur
+               chaque repo via mcp__github__create_pull_request
+
+            MISSION 3 — Mettre a jour RAPPORT.md
+
+            Apres chaque action executee, mets a jour le fichier RAPPORT.md :
+            - Remplace [x] par [FAIT - PR #N] avec le numero de la PR
+            - Ajoute a la fin du fichier un tableau "Execution" :
+
+            ## Execution du [DATE]
+            | Repo | Action | PR | Statut |
+            |------|--------|-----|--------|
+            | nom | description | #N | Ouvert |
+
+            Puis commite et pushe le RAPPORT.md mis a jour :
+            Bash("cd /home/runner/work/_claude-manager/_claude-manager && git add RAPPORT.md && git commit -m 'chore: update rapport with execution status' && git push origin HEAD")
+
+            IMPORTANT : Traite les actions SECURITE en premier,
+            puis DEPS, puis DOCS, puis README.
